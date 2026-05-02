@@ -14,6 +14,8 @@ const Dashboard = () => {
   const [data, setData] = useState<string>("");
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [newTodo, setNewTodo] = useState<string>("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [todoError, setTodoError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
@@ -136,6 +138,35 @@ const Dashboard = () => {
     void loadDashboard();
   }, []);
 
+  function startEdit(id: number, title: string) {
+    setEditingId(id);
+    setEditingTitle(title);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditingTitle("");
+    setTodoError("");
+  }
+
+  async function saveEdit(id: number) {
+    const title = editingTitle.trim();
+    if (!title) {
+      setTodoError("Please enter a todo title.");
+      return;
+    }
+
+    try {
+      await updateTodo(id, { title });
+      setEditingId(null);
+      setEditingTitle("");
+      setTodoError("");
+    } catch (e) {
+      // updateTodo already sets error, but ensure editing state cleared
+      setTodoError("Unable to save todo.");
+    }
+  }
+
   return (
     <div className="page-wrap">
       <div className="card dashboard-card">
@@ -185,26 +216,52 @@ const Dashboard = () => {
                       checked={todo.completed}
                       onChange={() => void updateTodo(todo.id, { completed: !todo.completed })}
                     />
-                    <span className={todo.completed ? "todo-title completed" : "todo-title"}>
-                      {todo.title}
-                    </span>
+
+                    {editingId === todo.id ? (
+                      <input
+                        className={"todo-title-edit"}
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                          if (e.key === "Enter") void saveEdit(todo.id);
+                          if (e.key === "Escape") cancelEdit();
+                        }}
+                        autoFocus
+                      />
+                    ) : (
+                      <span className={todo.completed ? "todo-title completed" : "todo-title"}>
+                        {todo.title}
+                      </span>
+                    )}
                   </label>
 
                   <div className="todo-actions">
-                    <button
-                      className="ghost-button"
-                      onClick={() => {
-                        const nextTitle = window.prompt("Update todo title", todo.title);
-                        if (nextTitle && nextTitle.trim()) {
-                          void updateTodo(todo.id, { title: nextTitle.trim() });
-                        }
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button className="danger-button" onClick={() => void deleteTodo(todo.id)}>
-                      Delete
-                    </button>
+                    {editingId === todo.id ? (
+                      <>
+                        <button
+                          className="ghost-button"
+                          onClick={() => void saveEdit(todo.id)}
+                          disabled={!editingTitle.trim()}
+                        >
+                          Save
+                        </button>
+                        <button className="ghost-button" onClick={() => cancelEdit()}>
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          className="ghost-button"
+                          onClick={() => startEdit(todo.id, todo.title)}
+                        >
+                          Edit
+                        </button>
+                        <button className="danger-button" onClick={() => void deleteTodo(todo.id)}>
+                          Delete
+                        </button>
+                      </>
+                    )}
                   </div>
                 </article>
               ))

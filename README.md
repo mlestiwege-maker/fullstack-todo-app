@@ -71,3 +71,46 @@ Or run the frontend on another machine that has internet access and point it to 
 - Add persistent storage (SQLite/Postgres) instead of the in-memory `users_db`.
 - Add a To-Do model and CRUD endpoints.
 - Add unit and integration tests.
+ 
+## What changed in this fork
+This version implements a full To-Do CRUD UI and persistent storage (SQLite) for todos and users. It also adds a nicer inline editor for todos and a CI workflow that builds the frontend and checks Python syntax on push.
+
+## To-Do features
+- Create, list, update, and delete todos from the dashboard
+- Todos are persisted to `backend/todo_app.db` (SQLite)
+
+## Continuous Integration
+A lightweight GitHub Actions workflow is included at `.github/workflows/ci.yml`. It will:
+- install backend requirements and run a quick Python syntax check
+- install frontend dependencies and run a production build
+
+## Run locally (quick)
+1. Backend
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+# set SECRET_KEY in a .env file in the project root (a template exists)
+uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+2. Frontend (dev)
+
+```bash
+cd frontend
+npm install
+npm run dev
+# open http://127.0.0.1:3000 or the port Vite reports
+```
+
+3. Frontend (production build)
+
+```bash
+cd frontend
+npm ci --legacy-peer-deps
+npm run build
+```
+
+If you prefer, the frontend can be served separately and configured to point to the backend API at `http://127.0.0.1:8000`.
+
