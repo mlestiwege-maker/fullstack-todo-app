@@ -4,12 +4,48 @@ from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from models import User
-from database import users_db
-from auth import hash_password, verify_password, create_token, verify_token
-from logger import logger
+from .models import User, TodoCreate, TodoItem, TodoUpdate
+from .database import (
+    init_db,
+    user_exists,
+    create_user,
+    get_password_hash,
+    list_todos as db_list_todos,
+    create_todo as db_create_todo,
+    update_todo as db_update_todo,
+    delete_todo as db_delete_todo,
+)
+from .auth import hash_password, verify_password, create_token, verify_token
+from .logger import logger
 
 app = FastAPI()
+
+
+@app.on_event("startup")
+def startup_event() -> None:
+    init_db()
+
+
+def get_current_username(authorization: str | None) -> str:
+    if not authorization:
+        logger.warning("Authorization missing")
+        raise HTTPException(status_code=401, detail="No token provided")
+
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not token:
+        logger.warning("Malformed Authorization header")
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+
+    try:
+        payload = verify_token(token)
+    except Exception:
+        logger.warning("Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    username = payload.get("sub")
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return str(username)
 
 # CORS (REQUIRED)
 app.add_middleware(
@@ -54,11 +90,11 @@ def root():
 # REGISTER
 @app.post("/register")
 def register(user: User):
-    if user.username in users_db:
+    if user_exists(user.username):
         logger.warning("Register failed (already exists): %s", user.username)
         raise HTTPException(status_code=400, detail="User already exists")
 
-    users_db[user.username] = hash_password(user.password)
+    create_user(user.username, hash_password(user.password))
 
     logger.info("User registered: %s", user.username)
 
@@ -68,11 +104,12 @@ def register(user: User):
 # LOGIN
 @app.post("/login")
 def login(user: User):
-    if user.username not in users_db:
+    password_hash = get_password_hash(user.username)
+    if password_hash is None:
         logger.warning("Login failed (unknown user): %s", user.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if not verify_password(user.password, users_db[user.username]):
+    if not verify_password(user.password, password_hash):
         logger.warning("Login failed (bad password): %s", user.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -86,20 +123,47 @@ def login(user: User):
 # PROTECTED ROUTE
 @app.get("/protected")
 def protected(Authorization: str = Header(None)):
-    if not Authorization:
-        logger.warning("Protected access denied: missing Authorization header")
-        raise HTTPException(status_code=401, detail="No token provided")
+    username = get_current_username(Authorization)
+    logger.info("Protected access granted: %s", username)
+    return {"message": f"Welcome {username}"}
 
-    scheme, _, token = Authorization.partition(" ")
-    if scheme.lower() != "bearer" or not token:
-        logger.warning("Protected access denied: malformed Authorization header")
-        raise HTTPException(status_code=401, detail="Invalid authorization header")
 
-    try:
-        payload = verify_token(token)
-    except Exception:
-        logger.warning("Protected access denied: invalid token")
-        raise HTTPException(status_code=401, detail="Invalid token")
+@app.get("/todos", response_model=list[TodoItem])
+def list_todos(Authorization: str = Header(None)):
+    username = get_current_username(Authorization)
+    logger.info("Todos listed for: %s", username)
+    return db_list_todos(username)
 
-    logger.info("Protected access granted: %s", payload.get("sub", "unknown"))
-    return {"message": f"Welcome {payload['sub']}"}
+
+@app.post("/todos", response_model=TodoItem, status_code=201)
+def create_todo(todo: TodoCreate, Authorization: str = Header(None)):
+    username = get_current_username(Authorization)
+    created = db_create_todo(username, todo.title.strip())
+    logger.info("Todo created for %s: %s", username, created["title"])
+    return created
+
+
+@app.put("/todos/{todo_id}", response_model=TodoItem)
+def update_todo(todo_id: int, todo: TodoUpdate, Authorization: str = Header(None)):
+    username = get_current_username(Authorization)
+    updated = db_update_todo(
+        username,
+        todo_id,
+        title=todo.title.strip() if todo.title is not None else None,
+        completed=todo.completed,
+    )
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Todo not found")
+
+    logger.info("Todo updated for %s: %s", username, todo_id)
+    return updated
+
+
+@app.delete("/todos/{todo_id}")
+def delete_todo(todo_id: int, Authorization: str = Header(None)):
+    username = get_current_username(Authorization)
+    if not db_delete_todo(username, todo_id):
+        raise HTTPException(status_code=404, detail="Todo not found")
+
+    logger.info("Todo deleted for %s: %s", username, todo_id)
+    return {"message": "Todo deleted", "id": todo_id}

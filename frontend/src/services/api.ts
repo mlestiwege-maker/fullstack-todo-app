@@ -21,4 +21,24 @@ export interface ProtectedResponse {
   message: string;
 }
 
+export interface TodoItem {
+  id: number;
+  title: string;
+  completed: boolean;
+}
+
+export interface TodoCreatePayload {
+  title: string;
+}
+
+export interface TodoUpdatePayload {
+  title?: string;
+  completed?: boolean;
+}
+
+export interface TodoDeleteResponse {
+  message: string;
+  id: number;
+}
+
 export default API;

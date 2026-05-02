@@ -6,7 +6,10 @@ node_modules
 .env
 dist
 build
+*.tsbuildinfo
 .DS_Store
 /.idea
 /.vscode
 /.env
+backend/app.log
+backend/*.db
