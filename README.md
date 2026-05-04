@@ -2,6 +2,10 @@
 
 This repository is a full-stack To-Do authentication starter used for the competency task. It includes a Python FastAPI backend and a React + TypeScript frontend.
 
+## Submission artifacts
+- See `SUBMISSION_NOTE.md` for submission summary and validation evidence.
+- See `CHANGELOG.md` for a concise history of notable changes.
+
 ## Features
 - Register, Login endpoints
 - Protected route secured by Bearer token
