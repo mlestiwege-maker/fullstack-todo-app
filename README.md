@@ -5,6 +5,7 @@ This repository is a full-stack To-Do authentication starter used for the compet
 ## Submission artifacts
 - See `SUBMISSION_NOTE.md` for submission summary and validation evidence.
 - See `CHANGELOG.md` for a concise history of notable changes.
+- See `DEMO_CHECKLIST.md` for a ready 2-minute presentation flow.
 
 ## Features
 - Register, Login endpoints
