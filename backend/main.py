@@ -4,8 +4,8 @@ from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .models import User, TodoCreate, TodoItem, TodoUpdate
-from .database import (
+from models import User, TodoCreate, TodoItem, TodoUpdate
+from database import (
     init_db,
     user_exists,
     create_user,
@@ -15,8 +15,8 @@ from .database import (
     update_todo as db_update_todo,
     delete_todo as db_delete_todo,
 )
-from .auth import hash_password, verify_password, create_token, verify_token
-from .logger import logger
+from auth import hash_password, verify_password, create_token, verify_token
+from logger import logger
 
 app = FastAPI()
 

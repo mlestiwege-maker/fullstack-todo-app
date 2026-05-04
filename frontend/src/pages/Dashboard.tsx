@@ -184,7 +184,12 @@ const Dashboard = () => {
         {error && <p className="error">{error}</p>}
 
         <section className="todo-panel">
-          <h3>My todos</h3>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+            <h3>My todos</h3>
+            <span style={{ background: "#e0e7ff", color: "#1e40af", padding: "0.25rem 0.75rem", borderRadius: "9999px", fontSize: "0.875rem", fontWeight: "600" }}>
+              {todos.length} {todos.length === 1 ? "todo" : "todos"}
+            </span>
+          </div>
           <div className="todo-form">
             <input
               type="text"
