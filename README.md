@@ -89,7 +89,32 @@ A lightweight GitHub Actions workflow is included at `.github/workflows/ci.yml`.
 - install backend requirements and run a quick Python syntax check
 - install frontend dependencies and run a production build
 
-## Run locally (quick)
+## Run Full System (One Command)
+
+### Linux/macOS
+```bash
+./run.sh
+```
+
+### Windows
+```bash
+run.bat
+```
+
+Or use npm:
+```bash
+npm run dev
+```
+
+This will:
+- Set up Python virtual environment (if needed)
+- Install all dependencies (backend + frontend)
+- Start backend on `http://localhost:8000`
+- Start frontend on `http://localhost:3000`
+
+Press `Ctrl+C` to stop both servers.
+
+## Run locally (quick - individual servers)
 1. Backend
 
 ```bash
@@ -97,7 +122,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r backend/requirements.txt
 # set SECRET_KEY in a .env file in the project root (a template exists)
-uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 2. Frontend (dev)
