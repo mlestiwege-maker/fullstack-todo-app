@@ -13,3 +13,4 @@ build
 /.env
 backend/app.log
 backend/*.db
+frontend/backend/venv
