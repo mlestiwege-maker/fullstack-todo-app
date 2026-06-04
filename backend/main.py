@@ -1,3 +1,4 @@
+import os
 import time
 
 from fastapi import FastAPI, HTTPException, Header, Request
@@ -48,9 +49,16 @@ def get_current_username(authorization: str | None) -> str:
     return str(username)
 
 # CORS (REQUIRED)
+frontend_url = os.getenv("FRONTEND_URL", "")
+allow_origins = ["*"]
+if frontend_url:
+    allow_origins = [o.strip() for o in frontend_url.split(",") if o.strip()]
+elif os.getenv("NODE_ENV") == "development":
+    allow_origins = ["http://localhost:3000"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
